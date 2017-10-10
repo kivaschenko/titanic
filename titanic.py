@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd 
 from sklearn.cluster import KMeans
 import re
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
@@ -108,14 +109,19 @@ test.drop(['PassengerId', 'Survived'], axis=1, inplace=True)
 X = train.values
 y = survived
 X_pred = test.values
-print("Shape X: {0}. Shape y: {1}. Shape X_pred : {2}"\
-      .format(X.shape, y.shape, X_pred.shape))
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+X_pred_scaled = scaler.transform(X_pred)
+
+print("Shape X_scaled: {0}. Shape y: {1}. Shape X_pred_scaled : {2}"\
+      .format(X_scaled.shape, y.shape, X_pred_scaled.shape))
 
 param_grid = {'n_estimators': [n for n in range(10, 110, 10)],
               'max_features': [f for f in range(2, 12)]}
 print("Parameter grid:\n{}".format(param_grid))
 grid_search = GridSearchCV(RandomForestClassifier(random_state=42, n_jobs=-1), param_grid, cv=5)
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=21)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, random_state=21)
 grid_search.fit(X_train, y_train)
 print("Test set score: {:.5f}".format(grid_search.score(X_test, y_test)))
 print("Best parameters: {}".format(grid_search.best_params_))
@@ -135,23 +141,5 @@ print("Average cross-validation score: {:.5f}".format(scores.mean()))
 
 ################ To write the results in file ####################
 submission = pd.read_csv(submission_file)
-submission.iloc[:, 1] = forest.predict(X_pred)
+submission.iloc[:, 1] = forest.predict(X_pred_scaled)
 submission.to_csv('random_forest_clf_titanic_subm.csv', index=None)
-
-# Shape X: (891, 12). Shape y: (891,). Shape X_pred : (418, 12)
-# Parameter grid:
-# {'max_features': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'n_estimators': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
-# Test set score: 0.83857
-# Best parameters: {'max_features': 5, 'n_estimators': 30}
-# Best cross-validation score: 0.84132
-# Best estimator:
-# RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-#             max_depth=None, max_features=5, max_leaf_nodes=None,
-#             min_impurity_decrease=0.0, min_impurity_split=None,
-#             min_samples_leaf=1, min_samples_split=2,
-#             min_weight_fraction_leaf=0.0, n_estimators=30, n_jobs=-1,
-#             oob_score=False, random_state=42, verbose=0, warm_start=False)
-# Accuracy on training set: 0.98503
-# Accuracy on test set: 0.83857
-# Cross-validation scores: [ 0.7877095   0.80898876  0.81460674  0.79213483  0.84831461]
-# Average cross-validation score: 0.81035
