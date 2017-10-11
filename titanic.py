@@ -15,6 +15,10 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GridSearchCV
 
+#### pipeline 
+from sklearn.pipeline import Pipeline
+
+
 
 data_dir = "dev/titanic"
 
@@ -31,18 +35,6 @@ print(df.info())
 df["Embarked"].fillna("S", inplace=True)
 df["Age"].fillna(df["Age"].median(), inplace=True)
 df["Fare"].fillna(df["Fare"].median(), inplace=True)
-#  Assign cabin availibility
-df['has_cabin'] = df.loc[:,"Cabin"].apply(lambda x: 0 if type(x) == float else 1)
-#  Get length of names: name_length
-df['name_length'] = df['Name'].apply(len)
-
-#   To count the family size: 
-df['family_size'] = df.loc[:,'SibSp'] + df.loc[:,'Parch'] + 1
-df['is_alone'] = 0
-df.loc[df['family_size'] == 1, 'is_alone'] = 1
-
-df['Sex'] = df['Sex'].map({'female': 0, 'male': 1}).astype(int)
-df['Embarked'] = df['Embarked'].map({'S': 0, 'C': 1, 'Q': 2}).astype(int)
 
 df.loc[ df['Fare'] <= 7.91, 'Fare']                               = 0
 df.loc[(df['Fare'] > 7.91) & (df['Fare'] <= 14.454), 'Fare'] = 1
@@ -83,6 +75,16 @@ df['title'] = df['title'].replace('Mlle', 'Miss')
 df['title'] = df['title'].replace('Ms', 'Miss')
 df['title'] = df['title'].replace('Mme', 'Mrs')
 
+#  Assign cabin availibility
+df['has_cabin'] = df.loc[:,"Cabin"].apply(lambda x: 0 if type(x) == float else 1)
+#  Get length of names: name_length
+df['name_length'] = df['Name'].apply(len)
+
+#   To count the family size: 
+df['family_size'] = df.loc[:,'SibSp'] + df.loc[:,'Parch'] + 1
+df['is_alone'] = 0
+df.loc[df['family_size'] == 1, 'is_alone'] = 1
+
 for name_column in ['Sex', 'Embarked', 'title']:
     for key, value in zip(df[name_column].unique(), 
         list(range(len(df[name_column].unique())))):
@@ -115,6 +117,7 @@ X = train.values
 y = survived.ravel()
 X_pred = test.values
 
+
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
 X_pred_scaled = scaler.transform(X_pred)
@@ -124,27 +127,27 @@ print("Shape X_scaled: {0}. Shape y: {1}. Shape X_pred_scaled : {2}"\
 print("X_scaled[:10]: {0}.\n\n\n y[:10]:{1}.\n\n\n X_pred_scaled[:10]:{2}" \
     .format(X_scaled[:10], y[:10], X_pred_scaled[:10]))
 
-# param_grid = {'n_estimators': [n for n in range(20, 200, 20)],
-#               'max_depth'   : [d for d in range(4,10)],
-#               'max_features': [f for f in range(2, 7)]}
-# print("Parameter grid:\n{}".format(param_grid))
-# grid_search = GridSearchCV(RandomForestClassifier(random_state=42, 
-#                                                 n_jobs=-1), param_grid, cv=5)
+param_grid = {'n_estimators': [n for n in range(20, 200, 20)],
+              'max_depth'   : [d for d in range(3,7)],
+              'max_features': [f for f in range(2, 7)]}
+print("Parameter grid:\n{}".format(param_grid))
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42, 
+                                                n_jobs=-1), param_grid, cv=5)
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, random_state=21)
-# grid_search.fit(X_train, y_train)
-# print("Test set score: {:.5f}".format(grid_search.score(X_test, y_test)))
-# print("Best parameters: {}".format(grid_search.best_params_))
-# print("Best cross-validation score: {:.5f}".format(grid_search.best_score_))
-# print("Best estimator:\n{}".format(grid_search.best_estimator_))
+grid_search.fit(X_train, y_train)
+print("Test set score: {:.5f}".format(grid_search.score(X_test, y_test)))
+print("Best parameters: {}".format(grid_search.best_params_))
+print("Best cross-validation score: {:.5f}".format(grid_search.best_score_))
+print("Best estimator:\n{}".format(grid_search.best_estimator_))
 
-# forest = grid_search.best_estimator_
+forest = grid_search.best_estimator_
 
-forest = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-            max_depth=7, max_features=4, max_leaf_nodes=None,
-            min_impurity_decrease=0.0, min_impurity_split=None,
-            min_samples_leaf=1, min_samples_split=2,
-            min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=-1,
-            oob_score=False, random_state=42, verbose=0, warm_start=False)
+# forest = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
+#             max_depth=7, max_features=4, max_leaf_nodes=None,
+#             min_impurity_decrease=0.0, min_impurity_split=None,
+#             min_samples_leaf=1, min_samples_split=2,
+#             min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=-1,
+#             oob_score=False, random_state=42, verbose=0, warm_start=False)
 forest.fit(X_train, y_train)
 print("Accuracy on training set: {:.5f}".format(forest.score(X_train, y_train)))
 print("Accuracy on test set: {:.5f}".format(forest.score(X_test, y_test)))
@@ -160,20 +163,3 @@ submission = pd.read_csv(submission_file)
 submission.iloc[:, 1] = forest.predict(X_pred_scaled)
 submission.to_csv('random_forest_clf_titanic_subm.csv', index=False)
 
-
-# Parameter grid:
-# {'n_estimators': [20, 40, 60, 80, 100, 120, 140, 160, 180], 'max_depth': [4, 5, 6, 7, 8, 9], 'max_features': [2, 3, 4, 5, 6]}
-# Test set score: 0.81166
-# Best parameters: {'n_estimators': 100, 'max_depth': 7, 'max_features': 4}
-# Best cross-validation score: 0.85479
-# Best estimator:
-# RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-#             max_depth=7, max_features=4, max_leaf_nodes=None,
-#             min_impurity_decrease=0.0, min_impurity_split=None,
-#             min_samples_leaf=1, min_samples_split=2,
-#             min_weight_fraction_leaf=0.0, n_estimators=100, n_jobs=-1,
-#             oob_score=False, random_state=42, verbose=0, warm_start=False)
-# Accuracy on training set: 0.91617
-# Accuracy on test set: 0.81166
-# Cross-validation scores: [ 0.83240223  0.8258427   0.82022472  0.78651685  0.85393258]
-# Average cross-validation score: 0.82378
