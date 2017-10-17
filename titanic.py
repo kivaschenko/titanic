@@ -15,10 +15,6 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GridSearchCV
 
-#### pipeline 
-from sklearn.pipeline import Pipeline
-
-
 
 data_dir = "dev/titanic"
 
