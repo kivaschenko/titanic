@@ -16,14 +16,15 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import GridSearchCV
 
 
-data_dir = "dev/titanic"
+DATA_DIR = "dev/titanic"
 
-train_file = "{0}/train.csv".format(data_dir)
-test_file = "{0}/test.csv".format(data_dir)
-submission_file = "{0}/gender_submission.csv".format(data_dir)
+train_file = "{0}/train.csv".format(DATA_DIR)
+test_file = "{0}/test.csv".format(DATA_DIR)
+submission_file = "{0}/gender_submission.csv".format(DATA_DIR)
 
 df = pd.concat([pd.read_csv(train_file), pd.read_csv(test_file)])
 print(df.info())
+
 
 
 
@@ -88,14 +89,14 @@ for name_column in ['Sex', 'Embarked', 'title']:
     df[name_column] = df[name_column].astype(float)
 
 
-df.drop(['Age',
-        'Fare', 
-        'Cabin', 
-        'Ticket',
-        'Name',
-        'name_length',
-        'SibSp',
-        'PassengerId'], axis=1, inplace=True)
+df = df.drop([  'Age',
+                'Fare', 
+                'Cabin', 
+                'Ticket',
+                'Name',
+                'name_length',
+                'SibSp',
+                'PassengerId'], axis=1, inplace=True)
 
 print('df past dropping: {}'.format(df.info()))
 
